@@ -111,6 +111,16 @@ class clienteController {
             return res.status(500).send({ error: `Erro ao completar o cadastro. ${error.message}` });
         }
     }
+
+    async read(req, res) {
+        db.query("SELECT codCliente, nome, email, senha, cpf FROM cliente", (err, result) => {
+            if (err) {
+                return res.status(500).send(err);
+            }
+
+            return res.send(result);
+        })
+    }
 }
 
 export default new clienteController();

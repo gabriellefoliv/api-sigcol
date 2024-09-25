@@ -17,6 +17,7 @@ routes.post("/login", sessionsController.create)
 // Clientes
 routes.post("/clientes/qrcode", clienteController.validateQRCode)
 routes.post("/clientes/cadastro", clienteController.completeRegistration)
+routes.get("/clientes", clienteController.read)
 
 // Middleware de autenticação
 routes.use(auth)
