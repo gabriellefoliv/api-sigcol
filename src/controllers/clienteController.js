@@ -29,7 +29,7 @@ const getClientByCpf = async (cpf) => {
             },
         });
 
-        // Pegamos o CPF_CNPJ da resposta da API externa
+        // Pegamos o CPF_CNPJ da resposta do Rotas
         const clientes = response.data;
 
         // Filtrar o cliente cujo CPF_CNPJ coincide com o CPF fornecido
@@ -41,10 +41,10 @@ const getClientByCpf = async (cpf) => {
         if (clienteEncontrado) {
             return clienteEncontrado; // Cliente encontrado com o CPF correspondente
         } else {
-            throw new Error('CPF não coincide com o registrado na API externa.');
+            throw new Error('CPF não coincide com o registrado no Rotas.');
         }
     } catch (error) {
-        throw new Error('Erro ao buscar cliente por CPF na API externa');
+        throw new Error('Erro ao buscar cliente por CPF no Rotas.');
     }
 };
 
@@ -70,16 +70,16 @@ class clienteController {
         const { codCliente, nome, email, senha, cpf } = req.body;
 
         try {
-            // Verificar o cliente pelo CPF na API externa
+            // Verificar o cliente pelo CPF no Rotas
             const clienteExterno = await getClientByCpf(cpf);
 
             if (!clienteExterno || clienteExterno.CPF_CNPJ.replace(/[^\d]/g, '') !== cpf) {
-                return res.status(400).send({ error: 'CPF não encontrado ou não coincide com o registrado na API externa.' });
+                return res.status(400).send({ error: 'CPF não encontrado ou não coincide com o registrado no Rotas.' });
             }
 
-            // Verificar se o codCliente da API externa coincide com o codCliente fornecido
-            if (clienteExterno.CodCliente !== codCliente) {
-                return res.status(400).send({ error: 'Código do cliente não coincide com o registrado na API externa.' });
+            // Verificar se o codCliente do Rotas coincide com o codCliente fornecido
+            if (parseInt(clienteExterno.CodCliente) !== parseInt(codCliente)) {
+                return res.status(400).send({ error: 'Código do cliente não coincide com o registrado no Rotas.' });
             }
 
             // Verificar se o cliente já existe pelo codCliente no banco de dados

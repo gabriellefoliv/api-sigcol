@@ -30,7 +30,7 @@ class sessionsController {
             const { codCliente, nome } = cliente;
 
             return res.json({
-                user: {
+                cliente: {
                     codCliente,
                     nome,
                     email
