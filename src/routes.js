@@ -4,6 +4,9 @@ import clienteController from "./controllers/clienteController.js";
 import sessionsController from "./controllers/sessionsController.js";
 import quizController from "./controllers/quizController.js";
 import rankingController from "./controllers/rankingController.js";
+import plantaController from "./controllers/plantaController.js";
+import recompensaController from "./controllers/recompensaController.js"
+import coletaController from "./controllers/coletaController.js"
 
 const routes = Router();
 
@@ -26,7 +29,7 @@ routes.use(auth)
 // Rotas protegidas
 routes.get("/clientes", clienteController.read)
 
-// Quiz
+// Quiz 
 routes.post("/quiz", quizController.create)
 routes.put("/quiz/:id", quizController.update)
 routes.delete("/quiz/:id", quizController.delete)
@@ -37,5 +40,16 @@ routes.get("/quizAccess", quizController.checkQuizAccess)
 // Ranking
 routes.get("/ranking", rankingController.getRanking)
 
+// Planta
+routes.post("/planta/:id", plantaController.create)
+routes.get("/planta/:id", plantaController.read)
+routes.put("/planta/rega/:id", plantaController.water)
+routes.post("/planta/coleta/:id", plantaController.collect)
+
+// Recompensa
+routes.post("/recompensa/:id", recompensaController.create)
+
+// Coleta
+routes.post("/coleta", coletaController.importarByData)
 
 export default routes;
