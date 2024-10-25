@@ -92,25 +92,39 @@ class clienteController {
                     return res.status(400).send({ error: 'QRCode já registrado no sistema.' });
                 }
 
-                const hashedPassword = await createPasswordHash(senha);
-                // Se tudo estiver correto, cadastrar o cliente
-                db.query(
-                    `INSERT INTO cliente (codCliente, nome, email, senha, cpf) VALUES (?, ?, ?, ?, ?)`,
-                    [codCliente, nome, email, hashedPassword, cpf],
-                    (err) => {
-                        if (err) {
-                            console.error('Erro ao executar query:', err);
-                            return res.status(500).send({ error: 'Erro ao cadastrar cliente.' });
-                        } else {
-                            return res.status(200).send({ message: 'Cadastro completo com sucesso!' });
-                        }
+                // Verificar se o email já está cadastrado
+                db.query('SELECT * FROM cliente WHERE email = ?', [email], async (err, emailResults) => {
+                    if (err) {
+                        return res.status(500).send({ error: 'Erro ao verificar email no banco de dados.' });
                     }
-                );
+
+                    if (emailResults.length > 0) {
+                        return res.status(400).send({ error: 'Email já cadastrado no sistema.' });
+                    }
+
+                    // Criação do hash da senha
+                    const hashedPassword = await createPasswordHash(senha);
+
+                    // Cadastro do cliente
+                    db.query(
+                        `INSERT INTO cliente (codCliente, nome, email, senha, cpf) VALUES (?, ?, ?, ?, ?)`,
+                        [codCliente, nome, email, hashedPassword, cpf],
+                        (err) => {
+                            if (err) {
+                                console.error('Erro ao executar query:', err);
+                                return res.status(500).send({ error: 'Erro ao cadastrar cliente.' });
+                            } else {
+                                return res.status(200).send({ message: 'Cadastro completo com sucesso!' });
+                            }
+                        }
+                    );
+                });
             });
         } catch (error) {
             return res.status(500).send({ error: `Erro ao completar o cadastro. ${error.message}` });
         }
     }
+
 
     async read(req, res) {
         db.query("SELECT codCliente, nome, email, senha, cpf FROM cliente", (err, result) => {
