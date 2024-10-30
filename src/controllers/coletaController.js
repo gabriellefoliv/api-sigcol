@@ -4,7 +4,7 @@ import { authenticateRotasAPI, rotasApi } from "../services/api.js";
 
 const importColetasRotas = async () => {
     const token = await authenticateRotasAPI();
-    try{
+    try {
         const response = await rotasApi.get(`/coleta`, {
             headers: {
                 'Authorization': `Bearer ${token}` // Insira o token no cabeçalho
@@ -28,28 +28,28 @@ const obterUltimaDataImportacao = async () => {
 };
 
 class coletaController {
-    async importarByData(req, res){
+    async importarByData(req, res) {
         try {
             // Obtém a última data de importação com sucesso
             const ultimaDataImportacao = await obterUltimaDataImportacao();
-    
+
             // Obtém os dados de coleta
             const registros = await importColetasRotas();
             if (!registros || registros.length === 0) {
                 console.log("Nenhum dado de coleta foi encontrado na API.");
                 return res.status(500).send({ error: "Nenhum dado de coleta foi encontrado na API." })
             }
-    
+
             // Filtra registros com DataHora posterior à última data de importação
-            const novosRegistros = registros.filter(registro => 
+            const novosRegistros = registros.filter(registro =>
                 new Date(registro.DataHora) > new Date(ultimaDataImportacao?.dataImportacao)
             );
-    
+
             if (novosRegistros.length === 0) {
                 console.log("Nenhum novo registro para importar.");
                 res.status(100).send({ message: "Nenhum novo registro para importar." })
             }
-    
+
             // Agrupa e soma o peso coletado por cliente
             const totalPesoPorCliente = novosRegistros.reduce((acc, registro) => {
                 if (!acc[registro.CodCliente]) {
@@ -58,10 +58,10 @@ class coletaController {
                 acc[registro.CodCliente] += registro.PesoColetado;
                 return acc;
             }, {});
-    
+
             // Inicia a transação para inserir os novos registros e atualizar o histórico de importação
             await db.promise().beginTransaction();
-    
+
             // Insere os registros detalhados na tabela de destino (coleta_rotas_clone)
             for (const registro of novosRegistros) {
                 await db.promise().query(
@@ -70,7 +70,7 @@ class coletaController {
                     [registro.CodColeta, registro.DataHora, registro.PesoColetado, registro.CodCliente]
                 );
             }
-    
+
             // Insere o registro consolidado de pontuação para cada cliente na tabela de Ação
             for (const [codCliente, pesoTotal] of Object.entries(totalPesoPorCliente)) {
                 const pontos = Math.floor(pesoTotal); // Define a conversão de peso em pontos (exemplo: 1 kg = 1 ponto)
@@ -80,24 +80,24 @@ class coletaController {
                     [codCliente, 'coleta_residuos', pontos]
                 );
             }
-    
+
             // Atualiza o histórico de importação
             await db.promise().query(
                 `INSERT INTO historico_importacoes_rotas (situacao)
                 VALUES (?)`,
                 ['sucesso']
             );
-    
+
             // Confirma a transação
             await db.promise().commit();
             console.log("Importação e registro de pontuação concluídos com sucesso!");
-    
-    
+
+
         } catch (error) {
             // Desfaz a transação em caso de erro
             await db.promise().rollback();
             console.error("Erro ao importar registros:", error);
-            
+
             // Registra no histórico de importações com situação 'erro'
             await db.promise().query(
                 `INSERT INTO historico_importacoes_rotas (situacao)
@@ -106,6 +106,29 @@ class coletaController {
             );
         }
     }
+
+    async read(req, res) {
+        const codCliente = req.query.codCliente;
+
+        // Verifica se codCliente foi passado
+        if (!codCliente) {
+            return res.status(400).send({ error: "O parâmetro codCliente é necessário." });
+        }
+
+        db.query(
+            "SELECT codColeta, codColetor, codCliente, peso, dataColeta FROM coleta_residuos WHERE codCliente = ?",
+            [codCliente],
+            (err, result) => {
+                if (err) {
+                    return res.status(500).send(err);
+                }
+
+                return res.send(result);
+            }
+        );
+    }
+
+
 }
 
 export default new coletaController();

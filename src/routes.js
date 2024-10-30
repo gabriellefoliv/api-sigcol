@@ -27,7 +27,6 @@ routes.post("/clientes/cadastro", clienteController.completeRegistration)
 routes.use(auth)
 
 // Rotas protegidas
-routes.get("/clientes", clienteController.read)
 
 // Quiz 
 routes.post("/quiz", quizController.create)
@@ -39,6 +38,8 @@ routes.get("/quizAccess", quizController.checkQuizAccess)
 
 // Ranking
 routes.get("/ranking", rankingController.getRanking)
+routes.get("/ranking/:id", rankingController.getRankingPositionById)
+routes.get("/ranking/coletas/:id", rankingController.getColetaResiduosPosition)
 
 // Planta
 routes.post("/planta/:id", plantaController.create)
@@ -51,5 +52,6 @@ routes.post("/recompensa/:id", recompensaController.create)
 
 // Coleta
 routes.post("/coleta", coletaController.importarByData)
+routes.get("/coleta", coletaController.read)
 
 export default routes;

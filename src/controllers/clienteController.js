@@ -2,49 +2,26 @@ import db from "../database/index.js";
 import { authenticateRotasAPI, rotasApi } from "../services/api.js";
 import { createPasswordHash } from "../services/auth.js";
 
-const checkQRCodeExists = async (id) => {
-    const token = await authenticateRotasAPI();
-
-    try {
-        const response = await rotasApi.get(`/clientes/qrcode/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        return response.status === 200;
-    } catch (error) {
-        if (error.response && error.response.status === 404) {
-            return false;
-        }
-        throw new Error(`Erro ao verificar QRCode: ${error}`);
-    }
-};
-
-const getClientByCpf = async (cpf) => {
+const checkQRCodeExists = async (qrCode) => {
     const token = await authenticateRotasAPI();
 
     try {
         const response = await rotasApi.get(`/clientes`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Pegamos o CPF_CNPJ da resposta do Rotas
         const clientes = response.data;
 
-        // Filtrar o cliente cujo CPF_CNPJ coincide com o CPF fornecido
-        const clienteEncontrado = clientes.find(cliente => {
-            const formattedCpfFromApi = cliente.CPF_CNPJ.replace(/[^\d]/g, ''); // Remove formatação
-            return formattedCpfFromApi === cpf; // Comparação de CPF
-        });
+        // Procurar o cliente com o QR Code (CodCliente) correspondente
+        const clienteEncontrado = clientes.find(cliente => cliente.CodCliente === qrCode);
 
         if (clienteEncontrado) {
-            return clienteEncontrado; // Cliente encontrado com o CPF correspondente
+            return clienteEncontrado; // Retorna o cliente para a próxima etapa
         } else {
-            throw new Error('CPF não coincide com o registrado no Rotas.');
+            throw new Error('QRCode não encontrado.');
         }
     } catch (error) {
-        throw new Error('Erro ao buscar cliente por CPF no Rotas.');
+        throw new Error(`Erro ao verificar QRCode: ${error}`);
     }
 };
 
@@ -53,16 +30,15 @@ class clienteController {
         const { codCliente } = req.body;
 
         try {
-            const qrCodeExists = await checkQRCodeExists(codCliente);
+            const cliente = await checkQRCodeExists(codCliente);
 
-            if (!qrCodeExists) {
-                return res.status(400).send({ error: "QRCode não existe no Rotas" })
+            if (!cliente) {
+                return res.status(400).send({ error: "QRCode não existe no Rotas" });
             }
 
-            return res.status(200).send({ message: "QRCode validado com sucesso!" })
-
+            return res.status(200).send({ message: "QRCode validado com sucesso!", cliente });
         } catch (error) {
-            return res.status(500).send({ error: `Erro na validação do QRCode. ${error.message}` })
+            return res.status(500).send({ error: `Erro na validação do QRCode. ${error.message}` });
         }
     }
 
@@ -70,16 +46,16 @@ class clienteController {
         const { codCliente, nome, email, senha, cpf } = req.body;
 
         try {
-            // Verificar o cliente pelo CPF no Rotas
-            const clienteExterno = await getClientByCpf(cpf);
+            // Verificar o cliente pelo QR Code e CPF
+            const cliente = await checkQRCodeExists(codCliente);
 
-            if (!clienteExterno || clienteExterno.CPF_CNPJ.replace(/[^\d]/g, '') !== cpf) {
-                return res.status(400).send({ error: 'CPF não encontrado ou não coincide com o registrado no Rotas.' });
+            if (!cliente) {
+                return res.status(400).send({ error: 'Código do cliente não encontrado.' });
             }
 
-            // Verificar se o codCliente do Rotas coincide com o codCliente fornecido
-            if (parseInt(clienteExterno.CodCliente) !== parseInt(codCliente)) {
-                return res.status(400).send({ error: 'Código do cliente não coincide com o registrado no Rotas.' });
+            const formattedCpfFromApi = cliente.CPF_CNPJ.replace(/[^\d]/g, '');
+            if (formattedCpfFromApi !== cpf) {
+                return res.status(400).send({ error: 'O CPF fornecido não coincide com o registrado no Rotas.' });
             }
 
             // Verificar se o cliente já existe pelo codCliente no banco de dados
@@ -110,16 +86,6 @@ class clienteController {
         } catch (error) {
             return res.status(500).send({ error: `Erro ao completar o cadastro. ${error.message}` });
         }
-    }
-
-    async read(req, res) {
-        db.query("SELECT codCliente, nome, email, senha, cpf FROM cliente", (err, result) => {
-            if (err) {
-                return res.status(500).send(err);
-            }
-
-            return res.send(result);
-        })
     }
 }
 
