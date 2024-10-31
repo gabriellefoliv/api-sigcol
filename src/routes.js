@@ -29,7 +29,6 @@ routes.post("/clientes/cadastro", clienteController.completeRegistration)
 routes.use(auth)
 
 // Rotas protegidas
-routes.get("/clientes", clienteController.read)
 
 // Quiz
 routes.post("/quiz", quizController.create)
@@ -42,6 +41,7 @@ routes.get("/quizAccess", quizController.checkQuizAccess)
 // Ranking
 routes.get("/ranking", rankingController.getRanking)
 routes.get("/ranking/:id", rankingController.getRankingPositionById)
+routes.get("/ranking/coletas/:id", rankingController.getColetaResiduosPosition)
 
 // Planta
 routes.post("/planta/:id", plantaController.create)
@@ -58,6 +58,7 @@ routes.get("/pontos/:id", pontoController.read)
 
 // Coleta
 routes.post("/coleta", coletaController.importarColetas)
+routes.get("/coleta", coletaController.read)
 routes.get("/coletaTotal/:id", coletaController.readTotalByClient)
 
 // Parceiros

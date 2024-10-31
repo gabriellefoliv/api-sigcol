@@ -115,11 +115,6 @@ class rankingController {
             return res.status(500).json({ error: "Erro ao processar a posição no ranking." });
         }
     }
-
-
-
 }
-
-
 
 export default new rankingController();
