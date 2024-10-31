@@ -41,6 +41,7 @@ routes.get("/quizAccess", quizController.checkQuizAccess)
 
 // Ranking
 routes.get("/ranking", rankingController.getRanking)
+routes.get("/ranking/:id", rankingController.getRankingPositionById)
 
 // Planta
 routes.post("/planta/:id", plantaController.create)
@@ -57,6 +58,7 @@ routes.get("/pontos/:id", pontoController.read)
 
 // Coleta
 routes.post("/coleta", coletaController.importarColetas)
+routes.get("/coletaTotal/:id", coletaController.readTotalByClient)
 
 // Parceiros
 routes.get("/parceiros", parceiroController.read)

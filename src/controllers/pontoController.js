@@ -10,22 +10,30 @@ const readClientPoints = async (codCliente, razao) => {
         id = 'codCliente';
     }
 
+    const now = new Date();
+    const month = now.getMonth() + 1; // O mês é zero-indexado, então somamos 1
+    const year = now.getFullYear(); // Obtém o ano atual
+
     try {
         const [result] = await db.promise().query(
-                `SELECT c.${id}, 
-                    (IFNULL((
-                        SELECT SUM(a.pontos) 
-                        FROM acao a 
-                        WHERE a.codCliente = c.codCliente
-                    ), 0) 
-                    - IFNULL((
-                        SELECT SUM(r.pontos) 
-                        FROM recompensa r 
-                        WHERE r.codCliente = c.codCliente
-                    ), 0)) AS totalPontos
-                FROM cliente c
-                WHERE c.codCliente = ?;`, 
-            [codCliente]);
+            `SELECT c.${id}, 
+                (IFNULL((
+                    SELECT SUM(a.pontos) 
+                    FROM acao a 
+                    WHERE a.codCliente = c.codCliente 
+                    AND MONTH(a.dataAcao) = ? 
+                    AND YEAR(a.dataAcao) = ?
+                ), 0) 
+                - IFNULL((
+                    SELECT SUM(r.pontos) 
+                    FROM recompensa r 
+                    WHERE r.codCliente = c.codCliente 
+                    AND MONTH(r.dataAcao) = ? 
+                    AND YEAR(r.dataAcao) = ?
+                ), 0)) AS totalPontos
+            FROM cliente c
+            WHERE c.codCliente = ?;`, 
+            [month, year, month, year, codCliente]);
             console.log(result)
             return result;
     } catch (error) {

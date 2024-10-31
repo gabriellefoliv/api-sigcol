@@ -193,7 +193,7 @@ class plantaController {
             await connection.query(
                 `INSERT INTO acao (codCliente, tipo, pontos)
                  VALUES (?, 'planta', ?);`,
-                [codCliente, 5]
+                [codCliente, 15]
             );
     
             // Cria uma nova planta
