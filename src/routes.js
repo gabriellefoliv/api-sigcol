@@ -50,8 +50,8 @@ routes.put("/planta/rega/:id", plantaController.water)
 routes.post("/planta/coleta/:id", plantaController.collect)
 
 // Recompensa
-routes.post("/recompensa/p/:id", recompensaController.create)
-routes.get("/recompensa/r/:id", recompensaController.read)
+routes.post("/recompensa/:id", recompensaController.create)
+routes.get("/recompensa/:id", recompensaController.read)
 
 // Pontos
 routes.get("/pontos/:id", pontoController.read)

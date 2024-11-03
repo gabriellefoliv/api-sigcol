@@ -2,21 +2,39 @@ import db from "../database/index.js";
 
 // Sendo razao uma verificacao se será para o resgate de recompensa ou para o app, portanto diferenciando para codCliente ou CPF no resultado:
 const readClientPoints = async (codCliente, razao) => {
-
-    let id;
-    if( razao === 'resgate'){
-        id = 'cpf';
-    } else {
-        id = 'codCliente';
+    try {
+        const [result] = await db.promise().query(
+            `SELECT c.cpf, 
+                (IFNULL((
+                    SELECT SUM(a.pontos) 
+                    FROM acao a 
+                    WHERE a.codCliente = c.codCliente 
+                ), 0) 
+                - IFNULL((
+                    SELECT SUM(r.pontos) 
+                    FROM recompensa r 
+                    WHERE r.codCliente = c.codCliente 
+                ), 0)) AS totalPontos
+            FROM cliente c
+            WHERE c.codCliente = ?;`, 
+            [codCliente]);
+            return result;
+    } catch (error) {
+        console.error(`Erro ao ler total de pontos e cpf:`, error);
+        return error;
     }
+}
+
+//Usar caso os pontos sejam resetados juntamente com o ranking.
+const readClientPointsMonthly = async (codCliente, razao) => {
 
     const now = new Date();
     const month = now.getMonth() + 1; // O mês é zero-indexado, então somamos 1
     const year = now.getFullYear(); // Obtém o ano atual
 
     try {
-        const [result] = await db.promise().query(
-            `SELECT c.${id}, 
+        const result = db.query(
+            `SELECT c.cpf, 
                 (IFNULL((
                     SELECT SUM(a.pontos) 
                     FROM acao a 
@@ -41,7 +59,6 @@ const readClientPoints = async (codCliente, razao) => {
         return error;
     }
 }
-
 class pontosController {
     async read(req, res) {
 

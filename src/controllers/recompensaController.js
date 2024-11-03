@@ -8,18 +8,20 @@ const API_CONVERSAO_URL = 'https://reciclopontos.com.br/api/convert'; //RECICLOT
 
 const readRecompensa = async (codCliente) => {
     try {
-        const [result] = await db.promise().query(
-            `SELECT codParceiro, pontos, dataResgate FROM recompensa WHERE codCliente = ?`, 
-            [codCliente], (err) => {
-                if (err){
-                    return err;
-                } else {
-                    return result;
-                }
-            });
+        const [result] = await db.promise().query(  // Use `await` para esperar o resultado
+            `SELECT r.codRecompensa, r.pontos, r.dataResgate, p.nome AS nomeParceiro 
+            FROM recompensa r
+            JOIN parceiro p ON r.codParceiro = p.codParceiro
+            WHERE codCliente = ?
+            ORDER BY dataResgate DESC`, 
+            [codCliente]
+        );
+
+        console.log(result);
+        return result || []; // Retorna o resultado da consulta
     } catch (error) {
         console.error(`Erro ao registrar a recompensa:`, error);
-        return error;
+        throw new Error("Erro ao ler recompensas"); // Lança um erro
     }
 }
 
@@ -28,6 +30,8 @@ class recompensaController {
 
         const { id: codCliente } = req.params;
         const { codParceiro, pontos } = req.body;
+
+        //const cpf = await readClientCPF(codCliente);
 
         const result = await readClientPoints(codCliente, 'resgate');
 
@@ -39,7 +43,7 @@ class recompensaController {
                 const response = await axios.post('https://reciclopontos.com.br/api/convert', 
                     { 
                         token: '1a54b68b80f5131404d0051406be6a6d',
-                        cpf: result.cpf,
+                        //cpf: result.cpf,
                         description: "Conversão de Pontos em Reciclopontos",
                         points: pontos
                     },
@@ -82,15 +86,10 @@ class recompensaController {
         const { id: codCliente } = req.params;
 
         try {
-            const result = readRecompensa(codCliente);
-
-            // Verifica se a resposta é um erro
-            if (result.error) {
-                return res.status(500).send(result);  // Envia o objeto de erro
-            }
+            const result = await readRecompensa(codCliente); // Aguarda o resultado
 
             // Verifica se encontrou algum dado
-            if (result.length === 0) {
+            if (!result || result.length === 0) {
                 return res.status(404).send({ message: 'Nenhuma recompensa encontrada para este cliente.' });
             }
 
@@ -98,9 +97,9 @@ class recompensaController {
             return res.status(200).send(result);
 
         } catch (error) {
-            return res.status(500).send({ error: `Erro ao buscar recompensas. ${error.message}` });
+            console.error("Erro ao buscar recompensas:", error);
+            return res.status(500).send({ error: error.message }); // Retorna a mensagem de erro
         }
-
     }
 
 }
