@@ -1,0 +1,13 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'us-east1-docker.pkg.dev/apps-gameficacao-dev/api-sigcol', '.']
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-east1-docker.pkg.dev/apps-gameficacao-dev/api-sigcol']
+# Deploy container image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'api-rotas', '--image', 'us-east1-docker.pkg.dev/apps-gameficacao-dev/api-sigcol', '--region', 'us-east1']
+images:
+- us-east1-docker.pkg.dev/apps-gameficacao-dev/api-sigcol
