@@ -13,56 +13,56 @@ import parceiroController from "./controllers/parceiroController.js";
 const routes = Router();
 
 const start = async (req, res) => {
-    var now = new Date();
-    return res.status(200).json({ msg: `API SIGCOL v1.1.0 - ${now}` })
-}
+  var now = new Date();
+  return res.status(200).json({ msg: `API SIGCOL v1.1.0 - ${now}` });
+};
 
 //Rotas livres
-routes.get("/", start)
-routes.post("/login", sessionsController.create)
+routes.get("/", start);
+routes.post("/login", sessionsController.create);
 
 // Clientes
-routes.post("/clientes/qrcode", clienteController.validateQRCode)
-routes.post("/clientes/cadastro", clienteController.completeRegistration)
+routes.post("/clientes/qrcode", clienteController.validateQRCode);
+routes.post("/clientes/cadastro", clienteController.completeRegistration);
 
 // Middleware de autenticação
-routes.use(auth)
+routes.use(auth);
 
 // Rotas protegidas
 
 // Quiz
-routes.post("/quiz", quizController.create)
-routes.put("/quiz/:id", quizController.update)
-routes.delete("/quiz/:id", quizController.delete)
-routes.get("/quiz", quizController.getQuestion)
-routes.post("/quiz/:id", quizController.submitAnswer)
-routes.get("/quizAccess", quizController.checkQuizAccess)
+routes.post("/quiz", quizController.create);
+routes.put("/quiz/:id", quizController.update);
+routes.delete("/quiz/:id", quizController.delete);
+routes.get("/quiz", quizController.getQuestion);
+routes.post("/quiz/:id", quizController.submitAnswer);
+routes.get("/quizAccess", quizController.checkQuizAccess);
 
 // Ranking
-routes.get("/ranking", rankingController.getRanking)
-routes.get("/ranking/:id", rankingController.getRankingPositionById)
-routes.get("/ranking/coletas/:id", rankingController.getColetaResiduosPosition)
+routes.get("/ranking", rankingController.getRanking);
+routes.get("/ranking/:id", rankingController.getRankingPositionById);
+routes.get("/ranking/coletas/:id", rankingController.getColetaResiduosPosition);
 
 // Planta
-routes.post("/planta/:id", plantaController.create)
-routes.get("/planta/:id", plantaController.read)
-routes.put("/planta/rega/:id", plantaController.water)
-routes.post("/planta/coleta/:id", plantaController.collect)
+routes.post("/planta/:id", plantaController.create);
+routes.get("/planta/:id", plantaController.read);
+routes.put("/planta/rega/:id", plantaController.water);
+routes.post("/planta/coleta/:id", plantaController.collect);
 
 // Recompensa
-routes.post("/recompensa/:id", recompensaController.create)
-routes.get("/recompensa/:id", recompensaController.read)
+//routes.post("/recompensa/:id", recompensaController.create)
+routes.post("/recompensa/:id", recompensaController.test);
+routes.get("/recompensa/:id", recompensaController.read);
 
 // Pontos
-routes.get("/pontos/:id", pontoController.read)
+routes.get("/pontos/:id", pontoController.read);
 
 // Coleta
-routes.post("/coleta", coletaController.importarColetas)
-routes.get("/coleta", coletaController.read)
-routes.get("/coletaTotal/:id", coletaController.readTotalByClient)
+routes.post("/coleta", coletaController.importarColetas);
+routes.get("/coleta", coletaController.read);
+routes.get("/coletaTotal/:id", coletaController.readTotalByClient);
 
 // Parceiros
-routes.get("/parceiros", parceiroController.read)
-
+routes.get("/parceiros", parceiroController.read);
 
 export default routes;

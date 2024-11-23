@@ -26,6 +26,36 @@ const readRecompensa = async (codCliente) => {
 }
 
 class recompensaController {
+
+    async test(req, res) {
+
+        const { id: codCliente } = req.params;
+        const { codParceiro, pontos } = req.body;
+
+        const result = await readClientPoints(codCliente);
+        if (pontos > result.totalPontos){
+            return res.status(300).send({message : "Pontos insuficientes!"})
+        } else{
+            try{
+                db.query(  `INSERT INTO recompensa
+                    (codCliente, codParceiro, pontos)
+                    VALUES (?, ?, ?);`, [codCliente, codParceiro, pontos], (err) => {
+                    if (err) {
+                        return res.status(500).send(err);
+                    } else {
+                        return res
+                            .status(200).send({ message: "Transferencia de pontos realizada com sucesso!" });
+                    }
+                });  
+            } catch (error) {
+                console.error("ERRO ao registrar troca de pontos!", error.message);
+                return res.status(500).send({ message: 'Erro ao transferir pontos.' });
+            }
+        }
+
+
+    }
+
     async create(req, res){
 
         const { id: codCliente } = req.params;

@@ -89,15 +89,15 @@ class plantaController {
                         tempoRega = 2;
                         break;
                     case 1:
-                        regasNecessarias = 10;
+                        regasNecessarias = 5;
                         tempoRega = 4;
                         break;
                     case 2:
-                        regasNecessarias = 15;
+                        regasNecessarias = 5;
                         tempoRega = 6;
                         break;
                     case 3:
-                        regasNecessarias = 20;
+                        regasNecessarias = 5;
                         tempoRega = 8;
                         break;
                     case 4:
