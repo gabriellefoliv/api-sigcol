@@ -1,6 +1,74 @@
 import db from "../database/index.js";
 import { authenticateRotasAPI, rotasApi } from "../services/api.js";
 
+const registrarHistoricoImportacao = async (situacao) => {
+  try {
+    await db.promise().query(
+      `INSERT INTO historico_importacoes_rotas (dataImportacao, situacao) 
+         VALUES (?, ?)`,
+      [new Date(), situacao]
+    );
+    console.log(`Histórico de importação registrado como: ${situacao}`);
+  } catch (error) {
+    console.error("Erro ao registrar histórico de importação:", error);
+    throw new Error("Erro ao registrar histórico de importação.");
+  }
+};
+
+const getUltimaDataImportacao = async () => {
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT dataImportacao 
+         FROM historico_importacoes_rotas 
+         WHERE situacao = 'sucesso' 
+         ORDER BY dataImportacao DESC LIMIT 1`
+    );
+
+    return rows.length ? rows[0].dataImportacao : "1970-01-01T00:00:00.000Z";
+  } catch (error) {
+    console.error("Erro ao obter a última data de importação:", error);
+    throw new Error("Erro ao consultar a última data de importação.");
+  }
+};
+
+const inserirColeta = async (coleta) => {
+  try {
+    await db.promise().query(
+      `INSERT INTO coleta_residuos (codColeta, codCliente, peso, dataColeta) 
+         VALUES (?, ?, ?, ?)`,
+      [
+        coleta.CodColeta,
+        coleta.CodCliente,
+        coleta.PesoColetado,
+        coleta.DataHora,
+      ]
+    );
+    console.log(`Coleta ${coleta.CodColeta} inserida com sucesso.`);
+  } catch (error) {
+    console.error(`Erro ao inserir coleta ${coleta.CodColeta}:`, error);
+    throw new Error(`Erro ao inserir a coleta ${coleta.CodColeta}.`);
+  }
+};
+
+const buscarNovasColetas = async (token, ultimaDataImportacao) => {
+  try {
+    // Se a ultimaDataImportacao já estiver no formato 'YYYY-MM-DD HH:MM:SS', podemos passar diretamente
+    const dataImportacaoFormatada = ultimaDataImportacao; // Sem necessidade de formatação
+
+    const response = await rotasApi.get(`/coleta`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { dataInicio: dataImportacaoFormatada }, // Passando a data no formato correto
+    });
+
+    const novasColetas = response.data;
+    console.log(`${novasColetas.length} novas coletas encontradas.`);
+    return novasColetas;
+  } catch (error) {
+    console.error("Erro ao buscar coletas da API Rotas:", error);
+    throw new Error("Erro ao buscar coletas da API Rotas.");
+  }
+};
+
 const registrarAcao = async (coleta, pontos) => {
   try {
     await db
@@ -21,25 +89,6 @@ const registrarAcao = async (coleta, pontos) => {
   }
 };
 
-const registrarColeta = async (coleta) => {
-  try {
-    await db
-      .promise()
-      .query(
-        `INSERT INTO coleta_residuos (codColeta, codCliente, peso, dataColeta) VALUES (?, ?, ?, ?)`,
-        [
-          coleta.CodColeta,
-          coleta.CodCliente,
-          coleta.PesoColetado,
-          coleta.DataHora,
-        ]
-      );
-    console.log(`Coleta ${coleta.CodColeta} registrada com sucesso.`);
-  } catch (error) {
-    console.error(`Erro ao registrar a coleta ${coleta.CodColeta}:`, error);
-  }
-};
-
 // Verifica se existe o cliente o codCliente fornecido
 const procurarCliente = async (codCliente) => {
   try {
@@ -55,135 +104,45 @@ const procurarCliente = async (codCliente) => {
   }
 };
 
-const registrarNovasColetas = async (novasColetas, res) => {
+const importarColetas = async () => {
+  const token = await authenticateRotasAPI();
+
   try {
-    let pontos;
+    const ultimaDataImportacao = await getUltimaDataImportacao();
+    const novasColetas = await buscarNovasColetas(token, ultimaDataImportacao);
 
-    for (let coleta of novasColetas) {
-      console.log("CodCliente sendo verificado: ", coleta.CodCliente);
-      const existe = await procurarCliente(coleta.CodCliente);
-      console.log("Retorno de procurarCliente: ", existe);
-      if (existe) {
-        console.log("Cliente existe nos registros.");
-        // Registra a nova coleta
-        await registrarColeta(coleta);
+    if (novasColetas.length === 0) {
+      console.log("Nenhuma nova coleta para importar.");
+      return {
+        status: "sucesso",
+        message: "Nenhuma nova coleta para importar.",
+      };
+    }
 
-        // Calcula os pontos e registra a ação correspondente
-        pontos = 1 * coleta.PesoColetado;
-        await registrarAcao(coleta, pontos, res);
+    // Para cada coleta, verifica se o cliente está cadastrado
+    for (const coleta of novasColetas) {
+      const clienteExiste = await procurarCliente(coleta.CodCliente);
+
+      if (clienteExiste) {
+        await inserirColeta(coleta); // Registra a coleta no banco
+        await registrarAcao(coleta, coleta.Pontos); // Registra a ação de pontos
       } else {
-        console.log("Cliente não existe nos registros.");
+        console.log(
+          `Cliente ${coleta.CodCliente} não cadastrado. Coleta descartada.`
+        );
       }
     }
 
-    console.log("Novas coletas registradas com sucesso.");
+    await registrarHistoricoImportacao("sucesso");
+    return {
+      status: "sucesso",
+      message: "Novas coletas importadas com sucesso.",
+    };
   } catch (error) {
-    console.error("Erro ao registrar novas coletas:", error);
+    console.error("Erro durante a importação:", error);
+    await registrarHistoricoImportacao("erro");
+    return { status: "erro", message: error.message };
   }
 };
 
-const getUltimaColetaRegistrada = async () => {
-  try {
-    // Consulta para obter a data da última coleta registrada
-    const [rows] = await db
-      .promise()
-      .query(
-        `SELECT dataColeta FROM coleta_residuos ORDER BY dataColeta DESC LIMIT 1`
-      );
-
-    if (rows.length > 0) {
-      return rows[0].dataColeta; // Retorna a data da última coleta registrada
-    } else {
-      return "1970-01-01T00:00:00.000Z"; // Data mínima se não houver registros
-    }
-  } catch (error) {
-    console.error("Erro ao obter a data da última coleta registrada:", error);
-  }
-};
-
-class coletaController {
-  async readTotalByClient(req, res) {
-    const { id: codCliente } = req.params;
-    // Verifica se codCliente foi passado
-    if (!codCliente) {
-      return res
-        .status(400)
-        .send({ error: "O parâmetro codCliente é necessário." });
-    }
-    db.query(
-      "SELECT SUM(peso) AS totalPeso FROM coleta_residuos WHERE codCliente = ?",
-      [codCliente],
-      (err, result) => {
-        if (err) {
-          return res.status(500).send(err);
-        }
-        return res.send(result);
-      }
-    );
-  }
-
-  async read(req, res) {
-    const codCliente = req.query.codCliente;
-    // Verifica se codCliente foi passado
-    if (!codCliente) {
-      return res
-        .status(400)
-        .send({ error: "O parâmetro codCliente é necessário." });
-    }
-    db.query(
-      "SELECT codColeta, codColetor, codCliente, peso, dataColeta FROM coleta_residuos WHERE codCliente = ?",
-      [codCliente],
-      (err, result) => {
-        if (err) {
-          return res.status(500).send(err);
-        }
-        return res.send(result);
-      }
-    );
-  }
-
-  async importarColetas(req, res) {
-    const token = await authenticateRotasAPI();
-
-    try {
-      // Obtém todas as coletas da API
-      const response = await rotasApi.get(`/coleta`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // Insira o token no cabeçalho
-        },
-      });
-
-      // Obtém a última coleta registrada do banco de dados
-      const ultimaColetaRegistrada = await getUltimaColetaRegistrada();
-      console.log(`Última coleta registrada: ${ultimaColetaRegistrada}`);
-
-      // Filtra as novas coletas da API que ocorreram após a última coleta registrada
-      const novasColetas = response.data.filter(
-        (coleta) => new Date(coleta.DataHora) > new Date(ultimaColetaRegistrada)
-      );
-
-      // Verifica se há novas coletas a serem inseridas
-      if (novasColetas.length === 0) {
-        console.log("Não há novas coletas para registrar.");
-        return res.status(200).send({ message: "Nenhuma nova coleta!" });
-      }
-
-      // Insere as novas coletas no banco de dados
-      await registrarNovasColetas(novasColetas);
-      return res
-        .status(200)
-        .send({ message: "Novas coletas registradas com sucesso!" });
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        console.log("Nenhuma coleta encontrada na API.");
-        return res
-          .status(400)
-          .send({ error: "Nenhuma coleta encontrada na API!" });
-      }
-      console.error("Erro ao verificar coletas:", error);
-      return res.status(500).send({ error: "Erro ao verificar coletas!" });
-    }
-  }
-}
-
-export default new coletaController();
+export default importarColetas;
