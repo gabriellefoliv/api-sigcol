@@ -8,6 +8,7 @@ import plantaController from "./controllers/plantaController.js";
 import recompensaController from "./controllers/recompensaController.js";
 import pontoController from "./controllers/pontoController.js";
 import coletaController from "./controllers/coletaController.js";
+import importarColetaController from "./controllers/importarColetaController.js";
 import parceiroController from "./controllers/parceiroController.js";
 
 const routes = Router();
@@ -58,7 +59,7 @@ routes.get("/recompensa/:id", recompensaController.read);
 routes.get("/pontos/:id", pontoController.read);
 
 // Coleta
-routes.post("/coleta", coletaController.importarColetas);
+//routes.post("/coleta", importarColetaController.importarColetas);
 routes.get("/coleta", coletaController.read);
 routes.get("/coletaTotal/:id", coletaController.readTotalByClient);
 
