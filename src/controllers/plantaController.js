@@ -57,6 +57,41 @@ const updateEstagio = async (codPlanta) => {
   }
 };
 
+// Função para iniciar a transação no banco de dados
+const iniciarTransacao = async () => {
+  const connection = await db.promise().getConnection();
+  await connection.beginTransaction();
+  return connection;
+};
+
+// Subfunção para buscar planta
+const buscarPlanta = async (connection, codPlanta) => {
+  const [result] = await connection.query(
+    `SELECT codCliente, estagio FROM planta WHERE codPlanta = ?;`,
+    [codPlanta]
+  );
+  if (result.length === 0) {
+    throw new Error("Planta não encontrada.");
+  }
+  return result[0];
+};
+
+// Subfunção para registrar ação
+const registrarAcao = async (connection, codCliente) => {
+  await connection.query(
+    `INSERT INTO acao (codCliente, tipo, pontos) VALUES (?, 'planta', ?);`,
+    [codCliente, 15]
+  );
+};
+
+// Subfunção para atualizar status da planta (ativa ou não)
+const atualizarPlanta = async (connection, codPlanta) => {
+  await connection.query(
+    `UPDATE planta SET ativa = 'não' WHERE codPlanta = ?;`,
+    [codPlanta]
+  );
+};
+
 class plantaController {
   async create(req, res) {
     const { id: codCliente } = req.params;
@@ -119,7 +154,7 @@ class plantaController {
 
   async water(req, res) {
     const { id: codPlanta } = req.params;
-
+    const { codCliente: reqCliente } = req.body;
     try {
       // Obter informações da planta
       const plantaInfo = await getPlantaInfo(codPlanta);
@@ -127,6 +162,9 @@ class plantaController {
         return res.status(404).send({ message: "Planta não encontrada." });
       }
       const { codCliente, estagio, totalRegas, tempoRestante } = plantaInfo;
+      if (reqCliente != codCliente) {
+        return res.status(204).send({ message: "Usuário não reconhecido" });
+      }
 
       if (estagio === 4) {
         return res.status(300).send({
@@ -165,23 +203,16 @@ class plantaController {
   }
 
   async collect(req, res) {
-    const { id: codCliente } = req.params;
+    const { id: codPlanta } = req.params;
+    const { codCliente } = req.body;
     let connection;
 
     try {
-      connection = await db.promise().getConnection(); // Pega uma conexão para iniciar a transação
-      await connection.beginTransaction(); // Inicia uma transação
+      connection = await iniciarTransacao();
 
-      const [rows] = await connection.query(
-        `SELECT codPlanta, estagio
-                FROM planta
-                WHERE codCliente=?
-                ORDER BY dataCriada DESC
-                LIMIT 1;`,
-        [codCliente]
-      );
+      const planta = await buscarPlanta(connection, codPlanta);
 
-      const estagio = rows[0].estagio;
+      const { codCliente, estagio } = planta;
 
       if (estagio != 4) {
         return res
@@ -189,19 +220,9 @@ class plantaController {
           .send({ message: "Ainda nao está pronta para coleta" });
       }
 
-      // Insere os pontos pela coleta da planta
-      await connection.query(
-        `INSERT INTO acao (codCliente, tipo, pontos)
-                 VALUES (?, 'planta', ?);`,
-        [codCliente, 15]
-      );
-
-      // Cria uma nova planta
-      await connection.query(
-        `INSERT INTO planta (codCliente)
-                 VALUES (?);`,
-        [codCliente]
-      );
+      // Registra a ação e atualiza a planta
+      await registrarAcao(connection, planta.codCliente);
+      await atualizarPlanta(connection, codPlanta);
 
       await connection.commit(); // Confirma as alterações
       return res
