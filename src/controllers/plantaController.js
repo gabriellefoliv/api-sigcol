@@ -95,12 +95,13 @@ const atualizarPlanta = async (connection, codPlanta) => {
 class plantaController {
   async create(req, res) {
     const { id: codCliente } = req.params;
+    const { codTipoPlanta } = req.body;
 
     db.query(
       `INSERT INTO planta
-                    (codCliente)
-                    VALUES (?);`,
-      [codCliente],
+                    (codCliente, codTipoPlanta)
+                    VALUES (?, ?);`,
+      [codCliente, codTipoPlanta],
       (error) => {
         if (error) {
           return res.status(500).send(err);
