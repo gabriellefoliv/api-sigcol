@@ -49,6 +49,7 @@ routes.post("/planta/:id", plantaController.create);
 routes.get("/planta/:id", plantaController.read);
 routes.put("/planta/rega/:id", plantaController.water);
 routes.post("/planta/coleta/:id", plantaController.collect);
+routes.get("/tipoPlanta", plantaController.tipoPlanta);
 
 // Recompensa
 //routes.post("/recompensa/:id", recompensaController.create)
