@@ -10,6 +10,7 @@ import pontoController from "./controllers/pontoController.js";
 import coletaController from "./controllers/coletaController.js";
 import importarColetaController from "./controllers/importarColetaController.js";
 import parceiroController from "./controllers/parceiroController.js";
+import tipoPlantaController from "./controllers/tipoPlantaController.js";
 
 const routes = Router();
 
@@ -49,6 +50,9 @@ routes.post("/planta/:id", plantaController.create);
 routes.get("/planta/:id", plantaController.read);
 routes.put("/planta/rega/:id", plantaController.water);
 routes.post("/planta/coleta/:id", plantaController.collect);
+
+// Tipo Planta
+routes.get("/tipoPlanta", tipoPlantaController.read);
 
 // Recompensa
 //routes.post("/recompensa/:id", recompensaController.create)
