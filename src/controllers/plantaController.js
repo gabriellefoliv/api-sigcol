@@ -76,6 +76,18 @@ const buscarPlanta = async (connection, codPlanta) => {
   return result[0];
 };
 
+// Buscar se cliente já possui planta do tipo
+const buscarSeJaExiste = async (codCliente, codTipoPlanta) => {
+  const [result] = await db
+    .promise()
+    .query(
+      `SELECT codPlanta FROM planta WHERE codCliente = ?, codTipoPlanta = ?;`,
+      [codCliente, codTipoPlanta]
+    );
+
+  return result.length > 0;
+};
+
 // Subfunção para registrar ação
 const registrarAcao = async (connection, codCliente) => {
   await connection.query(
@@ -97,21 +109,29 @@ class plantaController {
     const { id: codCliente } = req.params;
     const { codTipoPlanta } = req.body;
 
-    db.query(
-      `INSERT INTO planta
-                    (codCliente, codTipoPlanta)
-                    VALUES (?, ?);`,
-      [codCliente, codTipoPlanta],
-      (error) => {
-        if (error) {
-          return res.status(500).send(err);
-        } else {
-          return res
-            .status(200)
-            .send({ message: "Nova planta criada para o cliente!" });
+    const jaExiste = buscarSeJaExiste(codCliente, codTipoPlanta);
+
+    if (jaExiste === true) {
+      return res
+        .status(205)
+        .send({ message: "Usuário já possuí uma planta desse tipo" });
+    } else {
+      db.query(
+        `INSERT INTO planta
+                      (codCliente, codTipoPlanta)
+                      VALUES (?, ?);`,
+        [codCliente, codTipoPlanta],
+        (error) => {
+          if (error) {
+            return res.status(500).send(err);
+          } else {
+            return res
+              .status(200)
+              .send({ message: "Nova planta criada para o cliente!" });
+          }
         }
-      }
-    );
+      );
+    }
   }
 
   async read(req, res) {
