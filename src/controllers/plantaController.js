@@ -105,6 +105,18 @@ const atualizarPlanta = async (connection, codPlanta) => {
 };
 
 class plantaController {
+  async tipoPlanta(req, res) {
+    db.query("SELECT * FROM tipo_planta", (error, result) => {
+      if (error) {
+        console.error("Erro ao buscar tipos de planta:", error);
+        return res
+          .status(500)
+          .send({ error: "Erro ao buscar tipos de planta." });
+      }
+      return res.status(200).send(result);
+    });
+  }
+
   async create(req, res) {
     const { id: codCliente } = req.params;
     const { codTipoPlanta } = req.body;
@@ -165,7 +177,8 @@ class plantaController {
       [codCliente],
       async (error, result) => {
         if (error) {
-          return res.status(500).send(error);
+          console.error("Erro ao buscar plantas:", error); // Adicione este log para depuração
+          return res.status(500).send(error); // Certifique-se de usar "error" aqui
         } else {
           return res.status(200).json(result);
         }
