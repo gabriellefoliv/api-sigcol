@@ -55,9 +55,9 @@ const buscarNovasColetas = async (token, ultimaDataImportacao) => {
     // Se a ultimaDataImportacao já estiver no formato 'YYYY-MM-DD HH:MM:SS', podemos passar diretamente
     const dataImportacaoFormatada = ultimaDataImportacao; // Sem necessidade de formatação
 
-    const response = await rotasApi.get(`/coleta`, {
+    const response = await rotasApi.get(`/coletaFiltrada`, {
       headers: { Authorization: `Bearer ${token}` },
-      params: { dataInicio: dataImportacaoFormatada }, // Passando a data no formato correto
+      params: { datafornecida: dataImportacaoFormatada }, // Passando a data no formato correto
     });
 
     const novasColetas = response.data;

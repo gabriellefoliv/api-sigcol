@@ -40,6 +40,16 @@ class coletaController {
       }
     );
   }
+
+  async Teste(req, res) {
+    const token = await authenticateRotasAPI();
+    const response = await rotasApi.get(`/coleta`, {
+      headers: { Authorization: `Bearer ${token}` }, // Passando a data no formato correto
+    });
+    const novasColetas = response.data;
+    console.log(`${novasColetas.length} novas coletas encontradas.`);
+    return res.send(novasColetas);
+  }
 }
 
 export default new coletaController();

@@ -61,6 +61,7 @@ routes.get("/pontos/:id", pontoController.read);
 // Coleta
 //routes.post("/coleta", importarColetaController.importarColetas);
 routes.get("/coleta", coletaController.read);
+//routes.get("/coletas", coletaController.Teste);
 routes.get("/coletaTotal/:id", coletaController.readTotalByClient);
 
 // Parceiros
