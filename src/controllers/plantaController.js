@@ -81,7 +81,7 @@ const buscarSeJaExiste = async (codCliente, codTipoPlanta) => {
   const [result] = await db
     .promise()
     .query(
-      `SELECT codPlanta FROM planta WHERE codCliente = ?, codTipoPlanta = ?;`,
+      `SELECT codPlanta FROM planta WHERE codCliente = ?, codTipoPlanta = ?, ativa = 'sim';`,
       [codCliente, codTipoPlanta]
     );
 
@@ -259,9 +259,7 @@ class plantaController {
       await atualizarPlanta(connection, codPlanta);
 
       await connection.commit(); // Confirma as alterações
-      return res
-        .status(200)
-        .send({ message: "Planta coletada com sucesso e nova plantada!" });
+      return res.status(200).send({ message: "Planta coletada com sucesso!" });
     } catch (error) {
       if (connection) await connection.rollback(); // Desfaz as alterações se algo der errado
       console.error("Erro ao coletar planta:", error);
