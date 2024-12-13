@@ -81,7 +81,7 @@ const buscarSeJaExiste = async (codCliente, codTipoPlanta) => {
   const [result] = await db
     .promise()
     .query(
-      `SELECT codPlanta FROM planta WHERE codCliente = ?, codTipoPlanta = ?, ativa = 'sim';`,
+      `SELECT codPlanta FROM planta WHERE codCliente = ? AND codTipoPlanta = ? AND ativa = 'sim';`,
       [codCliente, codTipoPlanta]
     );
 
@@ -120,12 +120,17 @@ class plantaController {
   async create(req, res) {
     const { id: codCliente } = req.params;
     const { codTipoPlanta } = req.body;
+    if (!codTipoPlanta) {
+      return res
+        .status(300)
+        .send({ message: "É necessário fornecer o tipo da planta" });
+    }
 
-    const jaExiste = buscarSeJaExiste(codCliente, codTipoPlanta);
-
+    const jaExiste = await buscarSeJaExiste(codCliente, codTipoPlanta);
+    console.log(jaExiste);
     if (jaExiste === true) {
       return res
-        .status(205)
+        .status(409)
         .send({ message: "Usuário já possuí uma planta desse tipo" });
     } else {
       db.query(
