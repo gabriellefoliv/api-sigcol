@@ -160,6 +160,7 @@ class plantaController {
     planta.dataCriada, 
     planta.estagio,
     tipo_planta.nomeTipoPlanta, 
+    tipo_planta.codTipoPlanta,
     tipo_planta.tempoRega,
     TIMESTAMPDIFF(
         SECOND, 
