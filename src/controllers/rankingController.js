@@ -23,6 +23,11 @@ class rankingController {
                         return res.status(500).json({ error: "Erro ao buscar o ranking." });
                     }
 
+                    // Caso nenhum registro seja encontrado, retornar um array vazio
+                    if (!result || result.length === 0) {
+                        return res.status(200).json([]); // Array vazio para o frontend interpretar
+                    }
+
                     return res.json(result);
                 }
             );

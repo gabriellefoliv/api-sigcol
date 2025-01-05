@@ -212,6 +212,16 @@ class plantaController {
         });
       }
 
+      // Verificar se já há regas registradas para a planta
+      const [regas] = await db
+        .promise()
+        .query(`SELECT 1 FROM rega WHERE codPlanta = ? LIMIT 1;`, [codPlanta]);
+
+      if (regas.length === 0) {
+        // Primeira rega: atualizar estágio da planta
+        await updateEstagio(codPlanta);
+      }
+
       // Configuração das regras para cada estágio
       // Quando o número de regas necessárias estiverem no BD em tipo_planta, essa informação pode ser importada via query
       const regrasEstagio = {

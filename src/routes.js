@@ -54,6 +54,8 @@ routes.get("/tipoPlanta", plantaController.tipoPlanta);
 
 // Tipo Planta
 routes.get("/tipoPlanta", tipoPlantaController.read);
+routes.get("/tipoPlanta/:codTipoPlanta", tipoPlantaController.readById);
+
 
 // Recompensa
 //routes.post("/recompensa/:id", recompensaController.create)
